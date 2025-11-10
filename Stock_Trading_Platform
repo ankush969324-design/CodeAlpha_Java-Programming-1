@@ -1,0 +1,57 @@
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ * Simple Stock Trading Platform (console prototype)
+ * - Supports users with cash + holdings
+ * - Market and Limit buy/sell orders
+ * - Per-symbol order book with matching engine (price-time priority)
+ * - In-memory (no DB), synchronous matching
+ *
+ * Save as ExchangeApp.java and run with `javac ExchangeApp.java && java ExchangeApp`
+ */
+
+public class ExchangeApp {
+
+    // ---------- Models ----------
+    enum Side { BUY, SELL }
+    enum OrderType { MARKET, LIMIT }
+
+    static class User {
+        final long id;
+        final String name;
+        double cash;
+        Map<String, Integer> holdings = new HashMap<>();
+
+        User(long id, String name, double cash) {
+            this.id = id;
+            this.name = name;
+            this.cash = cash;
+        }
+
+        void addShares(String symbol, int qty) {
+            holdings.put(symbol, holdings.getOrDefault(symbol, 0) + qty);
+        }
+
+        boolean removeShares(String symbol, int qty) {
+            int have = holdings.getOrDefault(symbol, 0);
+            if (have < qty) return false;
+            holdings.put(symbol, have - qty);
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("User{id=%d, name=%s, cash=%.2f, holdings=%s}", id, name, cash, holdings);
+        }
+    }
+
+    static class Order {
+        final long id;
+        final long userId;
+        final String symbol;
+        final Side side;
+        final OrderType type;
+        final double price; // meaning for LIMIT; for MARKET ignored
+        int remaining;
+        final long ts; // timestamp
